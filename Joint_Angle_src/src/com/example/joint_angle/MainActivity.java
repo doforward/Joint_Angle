@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
@@ -18,6 +19,7 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.R.string;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -37,21 +39,24 @@ import android.widget.Button;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
-	 TextView result_text;
-	 //TextView sendmessage;
-	  Button start,clear;
-	//  mag_protocol mag_protocol;
+	TextView result_text;
+	//TextView sendmessage;
+	Button start,clear;
+	//mag_protocol mag_protocol;
 	  BluetoothAdapter adapter;
 	  private final static String MY_UUID = "00001101-0000-1000-8000-00805F9B34FB";   //SPP服务UUID号
 	  BluetoothDevice _device = null;     //蓝牙设备
 	  BluetoothSocket _socket = null;      //蓝牙通信socket
-	  private InputStream blueStream;    //输入流，用来接收蓝牙数据
+
+
 	  private OutputStream outstream;
 	  myHandler mmhandler;
 	  String rec="";
 	  public String mydatabuffer="";
 	  //lee 改string为char
-	  public String databufferfrombluetooth;
+	  //思考后尽量不要用全局变量吧
+	  //多线程难保
+	  //public String databufferfrombluetooth;
 	  private static String readMessage="";
 		public double []data=new double[1000];//定义1000个点进行显示
 		public String mysubstring,sendstring;
@@ -76,6 +81,9 @@ public class MainActivity extends Activity {
 	    
 	    /**时间数据*/
 	    Date[] xcache = new Date[20];
+	    //lee add date to compare time interval between two pakage 
+	    Date prev_date,next_date;
+	    String prev_data,final_data;
 		/**数据*/
 	    int[] ycache = new int[20];
 	    Canvas canvas;
@@ -94,7 +102,7 @@ public class MainActivity extends Activity {
 		//实际的Y轴的位置
 		int centerY = HEIGHT / 2;
 		Timer timer = new Timer();
-		TimerTask task = null;
+		//TimerTask task = null;
 		
 		final String FILE_NAME = "data12";
 	  
@@ -110,8 +118,9 @@ public class MainActivity extends Activity {
 
 //			获取系统默认蓝牙
 			adapter = BluetoothAdapter.getDefaultAdapter();
-			getThread.start();//线程启动  
-			mmhandler = new myHandler();
+			//lee delete
+			//getThread.start();//线程启动  
+			//mmhandler = new myHandler();
 			
 			
 			final SurfaceView surface = (SurfaceView)
@@ -166,8 +175,12 @@ public class MainActivity extends Activity {
 
 	        //打开接收线程
 	        try{
-	    		blueStream = _socket.getInputStream();   //得到蓝牙数据输入流
-	    		}catch(IOException e){
+	    		//blueStream = _socket.getInputStream();   //得到蓝牙数据输入流
+	        	//getThread.start();//线程启动
+	        	new RecvData_Thread(_socket).start();
+	        	prev_date = new Date();
+				mmhandler = new myHandler();
+	    		}catch(Exception e){
 	    			return;
 	    		}
 	        
@@ -186,10 +199,12 @@ public class MainActivity extends Activity {
 			paint.setStrokeWidth((float) 2.0);				//线宽
 
 			cx = X_OFFSET;
+			/*			
 			if(task != null)
 			{
 				task.cancel();
 			}
+
 			task = new TimerTask()
 			{
 				public void run()
@@ -197,7 +212,10 @@ public class MainActivity extends Activity {
 					int cy = centerY-ydata;
 					canvas = holder.lockCanvas(new Rect(cx , cy - 2  , cx + 2, cy + 2));
 					//lee write(Integer.toString((cx-15))+"   "+Integer.toString(ydata/25));
-					write(databufferfrombluetooth+"+");
+					Calendar CD = Calendar.getInstance();
+					int SS = CD.get(Calendar.SECOND);
+					int MI = CD.get(Calendar.MILLISECOND);
+					write(SS+"s"+MI+"ms: "+databufferfrombluetooth+"+");
 					
 //					canvas.drawLine(cx-1, cy-2, cx, cy, paint);
 
@@ -218,7 +236,8 @@ public class MainActivity extends Activity {
 					holder.unlockCanvasAndPost(canvas);
 				}
 			};
-			timer.schedule(task , 0 , 200);
+			*/
+			//timer.schedule(task , 0 , 200);
 		}
 		
 		
@@ -259,7 +278,7 @@ public class MainActivity extends Activity {
 				// 以追加模式打开文件输出流
 				FileOutputStream fos = openFileOutput(FILE_NAME, MODE_APPEND);
 				//lee debug
-				Log.d("file", "above can write data in file");
+				//Log.d("file", "above can write data in file");
 				// 将FileOutputStream包装成PrintStream
 				PrintStream ps = new PrintStream(fos);
 				// 输出文件内容
@@ -291,16 +310,19 @@ public class MainActivity extends Activity {
 		}
 		*/
 		public class myHandler extends Handler{
+
+			  
 			@Override
 			public void handleMessage(Message msg) {
 
-				String text = "";
+				
+				String databufferfrombluetooth = "";
 					if(msg.what == 0x123){
 						
-						text = (String) msg.obj;
+						databufferfrombluetooth = (String) msg.obj;
 						//ydata = (Integer.parseInt(text))*25;
 						//lee result_text.setText(text);
-						Log.d(text, "接收到数据");
+						//Log.d("@@@bluetooth@@@", databufferfrombluetooth);
 						//while(databufferfrombluetooth[0] == "61" && databufferfrombluetooth[1] == "62") {
 						//lee capvalue = Integer.parseInt(databufferfrombluetooth[0]) + (Integer.parseInt(databufferfrombluetooth[1]))/10 + Integer.parseInt(databufferfrombluetooth[2])/100;
 						/*lee
@@ -313,10 +335,12 @@ public class MainActivity extends Activity {
 						{
 							result_text.setText("电容值为：" + databufferfrombluetooth[0] + "," + databufferfrombluetooth[1] + databufferfrombluetooth[2] + "        关节超出预定范围");
 						}*/
-						
-								result_text.setText(databufferfrombluetooth);
-				
-							ydata = (int)capvalue*25;
+						//
+						result_text.setText(databufferfrombluetooth);
+						//ver1
+						new MyTask(databufferfrombluetooth).run();
+						//ver2
+						//timer.schedule(new MyTask(databufferfrombluetooth) , 0 , 20);
 						//}
 //						String substring = text.substring(0,3);
 //						while(substring == PACKHEAD){
@@ -329,58 +353,7 @@ public class MainActivity extends Activity {
 			}
 		}
 	//获取蓝牙数据的子线程
-		Thread getThread =new Thread(){
-			@Override
-			public void run() {
-				
-				while (!currentThread().isInterrupted()) {
-					if(flag_rec_thread)
-					{
-						try{
-							blueStream = _socket.getInputStream();
-							int num;
-
-							byte[] buffer =new byte[1024];
-							num = blueStream.read(buffer);
-							databufferfrombluetooth = "";
-								for(int i = 0 ; i < num; i++)
-								{ 		  
-								//readMessage[i]=String.format("%2x", bytes[i-count]);	
-								databufferfrombluetooth += Integer.toHexString(buffer[i]&0xff);
-
-								}
-								
-								//sendstring = dealwithstring(mydatabuffer);
-								//result_text.setText(mydatabuffer);
-								//for (int i=0;i<5000;i++);
-
-							Message message = mmhandler.obtainMessage();  
-				            message.what = 0x123;  
-
-				            message.obj = "接收到数据";  
-
-				            mmhandler.sendMessage(message);  
-						}catch(IOException e) {  
-			                break;  
-			            }  
-						
-						try
-						{
-							sleep(100);
-						} catch (InterruptedException e)
-						{
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
-					}
-					
-				}
-				
-				
-				 
-			}
-		};
+		
 		/*
 		private byte[] getHexBytes(String message) {
 	        int len = message.length() / 2;
@@ -422,8 +395,8 @@ public class MainActivity extends Activity {
 			canvas.drawLine(X_OFFSET , 40 , X_OFFSET , HEIGHT , p);
 			
 			//绘制纵向珊格
-			 paint.setAntiAlias(true);	//设置画笔为无锯齿
-				paint.setColor(Color.BLACK);	//设置画笔颜色 
+			paint.setAntiAlias(true);	//设置画笔为无锯齿
+			paint.setColor(Color.BLACK);	//设置画笔颜色 
 			paint.setStrokeWidth((float) 1.0);				//线宽
 			paint.setStyle(Style.STROKE);
 			paint.setTextSize(28);
@@ -461,6 +434,119 @@ public class MainActivity extends Activity {
 			holder.lockCanvas(new Rect(0 , 0 , 0 , 0));
 			holder.unlockCanvasAndPost(canvas);
 		}
-		    
+		
+		public class RecvData_Thread extends Thread {
+			  private final BluetoothSocket _socket;      //蓝牙通信socket
+			  private InputStream blueStream;    //输入流，用来接收蓝牙数据
+			  
+			  public RecvData_Thread(BluetoothSocket socket) {
+
+				_socket = socket;
+				InputStream tmpIn = null; //上面定义的为final这是使用temp临时对象
+				
+				try {
+						tmpIn = socket.getInputStream(); //使用getInputStream作为一个流处理
+					} 
+				catch (IOException e) { }
+				blueStream = tmpIn;
+				}
+			@Override
+			public void run() {
+				
+				while (!currentThread().isInterrupted()) {
+					try{
+							byte[] buffer =new byte[1024];
+							int count = 0;
+							while (count == 0) {
+							   count = blueStream.available();
+							}
+							int readCount = 0; // 已经成功读取的字节的个数
+						    while (readCount < count) {
+							 	readCount += blueStream.read(buffer, readCount, count - readCount);
+     						}
+						    next_date = new Date();
+						    long prev = prev_date.getTime();
+						    long next = next_date.getTime();
+						    
+						    /*
+							Calendar CD = Calendar.getInstance();
+							int SS = CD.get(Calendar.SECOND);
+							int MI = CD.get(Calendar.MILLISECOND);
+							*/
+						    
+							String data_blth = "";
+							for(int i = 0 ; i < count; i++)
+							{ 		  
+								data_blth += Integer.toHexString(buffer[i]&0xff);
+							}
+							//data_blth += "in"+SS+"s"+MI+"ms";
+							
+							
+							if(count<10){
+								if (next-prev<100) {
+									final_data = prev_data+data_blth;
+								}
+								else{
+									prev_data = data_blth;
+								}
+								prev_date = next_date;		
+							}
+							//获取到是一个完整的数据后在post回去
+							Message message = mmhandler.obtainMessage();  
+				            message.what = 0x123;  
+				            message.obj = final_data;  
+			
+				            mmhandler.sendMessage(message);  
+						}catch(IOException e) {  
+			                break;  
+						}				
+			            
+					//先暂时不要休眠
+					/*
+					try
+						{
+							sleep(100);
+						} catch (InterruptedException a)
+						{
+							// TODO Auto-generated catch block
+							a.printStackTrace();
+						}
+						*/				
+					}
+					
+				}
+				
+				
+				 
+			public void cancel() {
+				try {
+						_socket.close();
+					} catch (IOException e) { }
+				
+			}
+		}
+
+		/*
+		task = new TimerTask()
+		{
+			
+		};
+		*/
+		
+		public class MyTask extends TimerTask{
+			String file_str = "";
+			public MyTask(String str) {
+				file_str = str;
+			}
+			public void run()
+			{
+				//
+				//Calendar CD = Calendar.getInstance();
+				//int SS = CD.get(Calendar.SECOND);
+				//int MI = CD.get(Calendar.MILLISECOND);
+				write(file_str);
+			}
+		}
 }
+
 
