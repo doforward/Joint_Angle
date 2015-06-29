@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
@@ -19,7 +20,8 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.R.string;
+//import android.R.integer;
+//import android.R.string;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -43,68 +45,68 @@ public class MainActivity extends Activity {
 	//TextView sendmessage;
 	Button start,clear;
 	//mag_protocol mag_protocol;
-	  BluetoothAdapter adapter;
-	  private final static String MY_UUID = "00001101-0000-1000-8000-00805F9B34FB";   //SPP服务UUID号
-	  BluetoothDevice _device = null;     //蓝牙设备
-	  BluetoothSocket _socket = null;      //蓝牙通信socket
+	BluetoothAdapter adapter;
+	private final static String MY_UUID = "00001101-0000-1000-8000-00805F9B34FB";   //SPP服务UUID号
+	BluetoothDevice _device = null;     //蓝牙设备
+	BluetoothSocket _socket = null;      //蓝牙通信socket
 
 
-	  private OutputStream outstream;
-	  myHandler mmhandler;
-	  String rec="";
-	  public String mydatabuffer="";
-	  //lee 改string为char
-	  //思考后尽量不要用全局变量吧
-	  //多线程难保
-	  //public String databufferfrombluetooth;
-	  private static String readMessage="";
-		public double []data=new double[1000];//定义1000个点进行显示
-		public String mysubstring,sendstring;
-		public static final String PACKHEAD = "6162";
-//		private Timer timer = new Timer();
-	    private GraphicalView chart;
-	    private TextView textview;
-//	    private TimerTask task;
-	    private int addY = -1;
-		private long addX;
-		int ydata;
-		double capvalue;
-		double CapValueConvert;
+	private OutputStream outstream;
+	myHandler mmhandler;
+	String rec="";
+	public String mydatabuffer="";
+	//lee 改string为char
+	//思考后尽量不要用全局变量吧
+	//多线程难保
+	//public String databufferfrombluetooth;
+	private static String readMessage="";
+	public double []data=new double[1000];//定义1000个点进行显示
+	public String mysubstring,sendstring;
+	public static final String PACKHEAD = "6162";
+	//private Timer timer = new Timer();
+	private GraphicalView chart;
+	private TextView textview;
+	//private TimerTask task;
+	private int addY = -1;
+	private long addX;
+	int ydata;
+	double capvalue;
+	double CapValueConvert;
+	//float capvalue;
+	//float CapValueConvert;
 		
-		/**曲线数量*/
-	    private static final int SERIES_NR=1;
-	    private static final String TAG = "message";
-	    private TimeSeries series1;
-	    private XYMultipleSeriesDataset dataset1;
-	    private Handler handler;
-	    private Random random=new Random();
-	    
-	    /**时间数据*/
-	    Date[] xcache = new Date[20];
-	    //lee add date to compare time interval between two pakage 
-	    Date prev_date,next_date;
-	    String prev_data,final_data;
-		/**数据*/
-	    int[] ycache = new int[20];
-	    Canvas canvas;
+	/**曲线数量*/
+	private static final int SERIES_NR=1;
+	private static final String TAG = "message";
+	private TimeSeries series1;
+	private XYMultipleSeriesDataset dataset1;
+	private Handler handler;
+	private Random random=new Random();
+	   
+	/**时间数据*/
+	Date[] xcache = new Date[20];
+	//lee add date to compare time interval between two pakage 
+	Date prev_date,next_date;
+	String prev_data,final_data;
+	/**数据*/
+	int[] ycache = new int[20];
+	Canvas canvas;
 	    
 	    
 
-	  public boolean flag_rec_thread=false;
-	  public static byte[] result = new byte[1024];
-
-	  private SurfaceHolder holder;
-		private Paint paint;
-		final int HEIGHT = 1000;
-		final int WIDTH = 1500;
-		final int X_OFFSET = 15;
-		private int cx = X_OFFSET;
-		//实际的Y轴的位置
-		int centerY = HEIGHT / 2;
-		Timer timer = new Timer();
-		//TimerTask task = null;
-		
-		final String FILE_NAME = "data12";
+	public boolean flag_rec_thread=false;
+	public static byte[] result = new byte[1024];
+	private SurfaceHolder holder;
+	private Paint paint;
+	final int HEIGHT = 1000;
+	final int WIDTH = 1500;
+	final int X_OFFSET = 15;
+	private int cx = X_OFFSET;
+	//实际的Y轴的位置
+	int centerY = HEIGHT / 2;
+	Timer timer = new Timer();
+	//TimerTask task = null;
+	final String FILE_NAME = "data12";
 	  
 		@Override
 		protected void onCreate(Bundle savedInstanceState)
@@ -115,23 +117,19 @@ public class MainActivity extends Activity {
 			result_text=(TextView)findViewById(R.id.result_text);
 			start = (Button) findViewById(R.id.start);
 			clear = (Button) findViewById(R.id.clear);
-
-//			获取系统默认蓝牙
+			//获取系统默认蓝牙
 			adapter = BluetoothAdapter.getDefaultAdapter();
 			//lee delete
 			//getThread.start();//线程启动  
 			//mmhandler = new myHandler();
 			
-			
-			final SurfaceView surface = (SurfaceView)
-					findViewById(R.id.show);
-			
-			
-				// 初始化SurfaceHolder对象
-				holder = surface.getHolder();
-				paint = new Paint();
-				paint.setColor(Color.GREEN);
-				paint.setStrokeWidth(3);
+			//get surface view in here
+			final SurfaceView surface = (SurfaceView)findViewById(R.id.show);
+			//初始化SurfaceHolder对象
+			holder = surface.getHolder();
+			paint = new Paint();
+			paint.setColor(Color.GREEN);
+			paint.setStrokeWidth(3);
 				
 				
 				
@@ -296,19 +294,7 @@ public class MainActivity extends Activity {
 			result_text.setText("");
 
 		}
-		/*
-		public static String ByteToString(byte[] bytes)
-		{
-			String returnString="";
-	
-			for (int i = 0; i < bytes.length; i++)
-			{
-				returnString+= Integer.toHexString(bytes[i]&0xff)+" ";
-			}
-			
-				return returnString ;
-		}
-		*/
+
 		public class myHandler extends Handler{
 
 			  
@@ -324,21 +310,41 @@ public class MainActivity extends Activity {
 						//lee result_text.setText(text);
 						//Log.d("@@@bluetooth@@@", databufferfrombluetooth);
 						//while(databufferfrombluetooth[0] == "61" && databufferfrombluetooth[1] == "62") {
-						//lee capvalue = Integer.parseInt(databufferfrombluetooth[0]) + (Integer.parseInt(databufferfrombluetooth[1]))/10 + Integer.parseInt(databufferfrombluetooth[2])/100;
-						/*lee
-						 * if(capvalue > 1.5 && capvalue < 2.5){
+						//
+						try {
+							//int i = Integer.valueOf(databufferfrombluetooth).intValue(); 
+							double temp = (new Double(databufferfrombluetooth)).doubleValue(); 
+							capvalue = temp/100.0;
+							//Log.d("@@@double success@@@", Integer.toString(i));
+						} catch (Exception e) {
+							// TODO: handle exception
+							Log.d("@@@error@@@", "why error");
+							e.printStackTrace();
+						}
+						
+						//int data = Integer.parseInt(databufferfrombluetooth);
+						//capvalue = (Double)data;
+						//double real_cap;
+						
+						//Log.d("@@@minus success@@@", "yes");
+						//Integer.parseInt(databufferfrombluetooth[0]) + (Integer.parseInt(databufferfrombluetooth[1]))/10 + Integer.parseInt(databufferfrombluetooth[2])/100;
+						
+						//if(capvalue > 1.5 && capvalue < 2.5){
 						CapValueConvert = -50.7464*capvalue*capvalue*capvalue+337.154*capvalue*capvalue-777.8272*capvalue+686.8225;
-							//result_text.setText("电容值为：" + databufferfrombluetooth[0] + "," + databufferfrombluetooth[1] + databufferfrombluetooth[2] + "   " + "角度值为：" + String.valueOf(CapValueConvert));
-							result_text.setText(databufferfrombluetooth,0,3);
-							}
+						CapValueConvert = CapValueConvert%360;
+						BigDecimal bg = new BigDecimal(CapValueConvert);  
+			            double cap_acc2 = bg.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();  
+						String Show_Str = "电容值：" + String.valueOf(capvalue)+ " | 角度值：" + String.valueOf(cap_acc2);
+						result_text.setText(Show_Str);
+							/*}
 						else
 						{
 							result_text.setText("电容值为：" + databufferfrombluetooth[0] + "," + databufferfrombluetooth[1] + databufferfrombluetooth[2] + "        关节超出预定范围");
 						}*/
 						//
-						result_text.setText(databufferfrombluetooth);
+						//result_text.setText(databufferfrombluetooth);
 						//ver1
-						new MyTask(databufferfrombluetooth).run();
+						new MyTask(Show_Str).run();
 						//ver2
 						//timer.schedule(new MyTask(databufferfrombluetooth) , 0 , 20);
 						//}
@@ -352,35 +358,6 @@ public class MainActivity extends Activity {
 				super.handleMessage(msg);
 			}
 		}
-	//获取蓝牙数据的子线程
-		
-		/*
-		private byte[] getHexBytes(String message) {
-	        int len = message.length() / 2;
-	        char[] chars = message.toCharArray();
-	        String[] hexStr = new String[len];
-	        byte[] bytes = new byte[len];
-	        for (int i = 0, j = 0; j < len; i += 2, j++) {
-	            hexStr[j] = "" + chars[i] + chars[i + 1];
-	            bytes[j] = (byte) Integer.parseInt(hexStr[j], 16);
-	        }
-	        return bytes;
-	    }
-	    
-//		数据解析
-		private String dealwithstring(String databuffer){
-			int length = databuffer.length();
-			int index = databuffer.indexOf(PACKHEAD);
-			if((length-index)>=4){
-				mysubstring = databuffer.substring(index+5, index+7);
-				mydatabuffer = "";
-			}else{
-				
-			}
-			return mysubstring;
-		 }
-		 */
-
 
 		private void drawBack(SurfaceHolder holder)
 		{
