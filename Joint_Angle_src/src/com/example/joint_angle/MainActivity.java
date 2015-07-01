@@ -14,9 +14,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-import org.achartengine.GraphicalView;
-import org.achartengine.model.TimeSeries;
-import org.achartengine.model.XYMultipleSeriesDataset;
+//import org.achartengine.GraphicalView;
+//import org.achartengine.model.TimeSeries;
+//import org.achartengine.model.XYMultipleSeriesDataset;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -30,6 +30,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.Paint.Style;
 import android.util.Log;
@@ -42,14 +44,11 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
 	TextView result_text;
-	//TextView sendmessage;
 	Button start,clear;
-	//mag_protocol mag_protocol;
 	BluetoothAdapter adapter;
 	private final static String MY_UUID = "00001101-0000-1000-8000-00805F9B34FB";   //SPP服务UUID号
 	BluetoothDevice _device = null;     //蓝牙设备
 	BluetoothSocket _socket = null;      //蓝牙通信socket
-
 
 	private OutputStream outstream;
 	myHandler mmhandler;
@@ -60,50 +59,53 @@ public class MainActivity extends Activity {
 	//多线程难保
 	//public String databufferfrombluetooth;
 	private static String readMessage="";
-	public double []data=new double[1000];//定义1000个点进行显示
+	//public double []data=new double[1000];//定义1000个点进行显示
 	public String mysubstring,sendstring;
 	public static final String PACKHEAD = "6162";
 	//private Timer timer = new Timer();
-	private GraphicalView chart;
+	//private GraphicalView chart;
 	private TextView textview;
 	//private TimerTask task;
-	private int addY = -1;
-	private long addX;
-	int ydata;
+	//private int addY = -1;
+	//private long addX;
+	//int ydata;
 	double capvalue;
 	double CapValueConvert;
+	int SV_w,SV_h;
+	float pre_value;
+	float nex_value;
 	//float capvalue;
 	//float CapValueConvert;
 		
 	/**曲线数量*/
-	private static final int SERIES_NR=1;
-	private static final String TAG = "message";
-	private TimeSeries series1;
-	private XYMultipleSeriesDataset dataset1;
+	//private static final int SERIES_NR=1;
+	//private static final String TAG = "message";
+	//private TimeSeries series1;
+	//private XYMultipleSeriesDataset dataset1;
 	private Handler handler;
 	private Random random=new Random();
 	   
 	/**时间数据*/
-	Date[] xcache = new Date[20];
+	//Date[] xcache = new Date[20];
 	//lee add date to compare time interval between two pakage 
 	Date prev_date,next_date;
 	String prev_data,final_data;
 	/**数据*/
-	int[] ycache = new int[20];
-	Canvas canvas;
+	//int[] ycache = new int[20];
+	//public Canvas canvas;
 	    
 	    
 
 	public boolean flag_rec_thread=false;
 	public static byte[] result = new byte[1024];
 	private SurfaceHolder holder;
-	private Paint paint;
-	final int HEIGHT = 1000;
-	final int WIDTH = 1500;
-	final int X_OFFSET = 15;
-	private int cx = X_OFFSET;
+	//private Paint paint;
+	//final int HEIGHT = 1000;
+	//final int WIDTH = 1500;
+	//final int X_OFFSET = 15;
+	//private int cx = X_OFFSET;
 	//实际的Y轴的位置
-	int centerY = HEIGHT / 2;
+	//int centerY = HEIGHT / 2;
 	Timer timer = new Timer();
 	//TimerTask task = null;
 	final String FILE_NAME = "data12";
@@ -125,14 +127,12 @@ public class MainActivity extends Activity {
 			
 			//get surface view in here
 			final SurfaceView surface = (SurfaceView)findViewById(R.id.show);
+			SV_w = surface.getWidth();
+			SV_h = surface.getHeight();
 			//初始化SurfaceHolder对象
 			holder = surface.getHolder();
-			paint = new Paint();
-			paint.setColor(Color.GREEN);
-			paint.setStrokeWidth(3);
-				
-				
-				
+			holder.addCallback(new DoThings( ));
+			
 		}
 		
 		
@@ -192,11 +192,11 @@ public class MainActivity extends Activity {
 			 
 			
 			
-			drawBack(holder);
-			paint.setColor(Color.RED);
-			paint.setStrokeWidth((float) 2.0);				//线宽
+			//drawBack(holder);
+			//paint.setColor(Color.RED);
+			//paint.setStrokeWidth((float) 2.0);				//线宽
 
-			cx = X_OFFSET;
+			//cx = X_OFFSET;
 			/*			
 			if(task != null)
 			{
@@ -207,31 +207,7 @@ public class MainActivity extends Activity {
 			{
 				public void run()
 				{
-					int cy = centerY-ydata;
-					canvas = holder.lockCanvas(new Rect(cx , cy - 2  , cx + 2, cy + 2));
-					//lee write(Integer.toString((cx-15))+"   "+Integer.toString(ydata/25));
-					Calendar CD = Calendar.getInstance();
-					int SS = CD.get(Calendar.SECOND);
-					int MI = CD.get(Calendar.MILLISECOND);
-					write(SS+"s"+MI+"ms: "+databufferfrombluetooth+"+");
-					
-//					canvas.drawLine(cx-1, cy-2, cx, cy, paint);
 
-//					canvas.drawLine(0, 0, 25, 2, paint);
-//					canvas.drawLine(25, 2, 50, 4, paint);
-//					canvas.drawLine(50, 4, 75, 6, paint);
-//					canvas.drawLine(75, 6, 100, 8, paint);
-//					canvas.drawLine(100, 8, 125, 10, paint);
-//					canvas.drawLine(150, 12, 150, 12, paint);
-					canvas.drawPoint(cx , cy , paint);
-					cx ++;
-					if (cx > WIDTH)
-					{
-						task.cancel();
-						task = null;
-
-					}
-					holder.unlockCanvasAndPost(canvas);
 				}
 			};
 			*/
@@ -296,23 +272,17 @@ public class MainActivity extends Activity {
 		}
 
 		public class myHandler extends Handler{
-
-			  
+		  
 			@Override
 			public void handleMessage(Message msg) {
 
 				
 				String databufferfrombluetooth = "";
-					if(msg.what == 0x123){
+					if(msg.what == 0x123)
+					{
 						
 						databufferfrombluetooth = (String) msg.obj;
-						//ydata = (Integer.parseInt(text))*25;
-						//lee result_text.setText(text);
-						//Log.d("@@@bluetooth@@@", databufferfrombluetooth);
-						//while(databufferfrombluetooth[0] == "61" && databufferfrombluetooth[1] == "62") {
-						//
 						try {
-							//int i = Integer.valueOf(databufferfrombluetooth).intValue(); 
 							double temp = (new Double(databufferfrombluetooth)).doubleValue(); 
 							capvalue = temp/100.0;
 							//Log.d("@@@double success@@@", Integer.toString(i));
@@ -321,60 +291,42 @@ public class MainActivity extends Activity {
 							Log.d("@@@error@@@", "why error");
 							e.printStackTrace();
 						}
-						
-						//int data = Integer.parseInt(databufferfrombluetooth);
-						//capvalue = (Double)data;
-						//double real_cap;
-						
-						//Log.d("@@@minus success@@@", "yes");
-						//Integer.parseInt(databufferfrombluetooth[0]) + (Integer.parseInt(databufferfrombluetooth[1]))/10 + Integer.parseInt(databufferfrombluetooth[2])/100;
-						
 						//if(capvalue > 1.5 && capvalue < 2.5){
 						CapValueConvert = -50.7464*capvalue*capvalue*capvalue+337.154*capvalue*capvalue-777.8272*capvalue+686.8225;
-						CapValueConvert = CapValueConvert%360;
+						//CapValueConvert = java.lang.Math.abs(CapValueConvert);
+						//错误的修改 保证角度在0-180以内
+						CapValueConvert = ((CapValueConvert%180)+180)%180;
 						BigDecimal bg = new BigDecimal(CapValueConvert);  
 			            double cap_acc2 = bg.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();  
 						String Show_Str = "电容值：" + String.valueOf(capvalue)+ " | 角度值：" + String.valueOf(cap_acc2);
 						result_text.setText(Show_Str);
-							/*}
-						else
-						{
-							result_text.setText("电容值为：" + databufferfrombluetooth[0] + "," + databufferfrombluetooth[1] + databufferfrombluetooth[2] + "        关节超出预定范围");
-						}*/
-						//
-						//result_text.setText(databufferfrombluetooth);
-						//ver1
-						new MyTask(Show_Str).run();
-						//ver2
-						//timer.schedule(new MyTask(databufferfrombluetooth) , 0 , 20);
-						//}
-//						String substring = text.substring(0,3);
-//						while(substring == PACKHEAD){
-//							long xxx = Integer.parseInt(text.substring(4,5)) + Integer.parseInt(text.substring(6,7)) + Integer.parseInt(text.substring(8,9));
-//						}
-//						updateChart(ydata);
-				
+						new File_Task(Show_Str).run();
+						nex_value = new Float(cap_acc2).floatValue();
+						//new Chart_Task(cap_acc2).run();
+						
+						Log.d("$$$", "surface implements");
 					}
 				super.handleMessage(msg);
 			}
 		}
 
+		/*
 		private void drawBack(SurfaceHolder holder)
 		{
 			Canvas canvas = holder.lockCanvas();
 			// 绘制白色背景
 			canvas.drawColor(Color.WHITE);
-			Paint p = new Paint();
-			p.setColor(Color.BLACK);
-			p.setStrokeWidth(2);
+			Paint paint = new Paint();
+			paint.setColor(Color.BLACK);
+			paint.setStrokeWidth(2);
 			// 绘制坐标轴
-			canvas.drawLine(X_OFFSET , centerY , WIDTH , centerY , p);
-			canvas.drawLine(X_OFFSET , 40 , X_OFFSET , HEIGHT , p);
+			canvas.drawLine(X_OFFSET , centerY , WIDTH , centerY , paint);
+			canvas.drawLine(X_OFFSET , 40 , X_OFFSET , HEIGHT , paint);
 			
 			//绘制纵向珊格
 			paint.setAntiAlias(true);	//设置画笔为无锯齿
-			paint.setColor(Color.BLACK);	//设置画笔颜色 
-			paint.setStrokeWidth((float) 1.0);				//线宽
+			//paint.setColor(Color.BLACK);	//设置画笔颜色 
+			//paint.setStrokeWidth((float) 1.0);				//线宽
 			paint.setStyle(Style.STROKE);
 			paint.setTextSize(28);
 
@@ -407,10 +359,12 @@ public class MainActivity extends Activity {
 				    canvas.drawPath(gridpath2, paint);					//绘制任意多边形  
 				    
 				    
-			holder.unlockCanvasAndPost(canvas);
-			holder.lockCanvas(new Rect(0 , 0 , 0 , 0));
+			//holder.unlockCanvasAndPost(canvas);
+			//holder.lockCanvas(new Rect(0 , 0 , 0 , 0));
 			holder.unlockCanvasAndPost(canvas);
 		}
+		*/
+		
 		
 		public class RecvData_Thread extends Thread {
 			  private final BluetoothSocket _socket;      //蓝牙通信socket
@@ -472,6 +426,7 @@ public class MainActivity extends Activity {
 							Message message = mmhandler.obtainMessage();  
 				            message.what = 0x123;  
 				            message.obj = final_data;  
+				            
 			
 				            mmhandler.sendMessage(message);  
 						}catch(IOException e) {  
@@ -502,17 +457,10 @@ public class MainActivity extends Activity {
 				
 			}
 		}
-
-		/*
-		task = new TimerTask()
-		{
-			
-		};
-		*/
 		
-		public class MyTask extends TimerTask{
+		public class File_Task extends TimerTask{
 			String file_str = "";
-			public MyTask(String str) {
+			public File_Task(String str) {
 				file_str = str;
 			}
 			public void run()
@@ -524,6 +472,89 @@ public class MainActivity extends Activity {
 				write(file_str);
 			}
 		}
+		
+	    private class DoThings implements SurfaceHolder.Callback{
+;
+	    	float pre_x = 0.0f,pre_y = 0.0f;
+	    	float step;
+	    	float coo_x = 0,coo_y=0;
+	    	float tmp;
+
+	        @Override  
+	        public void surfaceChanged(SurfaceHolder holder, int format, int width,  
+	                int height) {  
+	            //在surface的大小发生改变时激发  
+	        	SV_w = width;
+	        	step = (float) (SV_w/50.0);
+	        	SV_h = height;
+	            System.out.println("surfaceChanged");  
+	        }  
+	  
+	        @Override  
+	        public void surfaceCreated(SurfaceHolder holder1){  
+	            new Thread(){  
+	                public void run() {  
+	                    while(true){  
+	                        //1.这里就是核心了， 得到画布 ，然后在你的画布上画出要显示的内容  
+	                        Canvas c = holder.lockCanvas();  
+	                        //2.开画  
+	                        Paint  p =new Paint();
+	                        p.setStrokeWidth(5);
+	                        p.setColor(Color.WHITE);  
+	                        //c.drawLine(0, SV_h/2, SV_w/2, SV_h/2,p);
+	                        /*
+	                        Rect aa  =  new Rect( (int)(Math.random() * 100) ,  
+	                                (int)(Math.random() * 100)   
+	                                ,(int)(Math.random() * 500)   
+	                                ,(int)(Math.random() * 500) );  
+	                        c.drawRect(aa, p);
+	                        */
+	                        
+	                        //pre_y = SV_h-(pre_value/180)*SV_h;
+	                        coo_y = SV_h-(nex_value/180)*SV_h;
+	                        
+	                        
+	                        c.drawLine(coo_x,tmp,coo_x,pre_y,p);
+	                        c.drawLine(coo_x,pre_y,coo_x+step,coo_y,p);
+	                        
+	                        //c.drawLine(coo_x,step,coo_x,pre_y,p);
+	                        //c.drawLine(coo_x,step,coo_x+step,step,p);
+	                        
+	                        tmp = pre_y;
+	                        pre_value = nex_value;
+	                        pre_y = coo_y;
+	                        coo_x += step;
+	                        coo_x = coo_x%SV_w;
+	                        //if (coo_x>SV_w) {
+								//coo_x = 0;
+								//c.drawColor(Color.BLACK);
+								p.setXfermode(new PorterDuffXfermode(Mode.CLEAR));  
+							//}
+	                        
+	                  
+	                        
+	                        //3. 解锁画布   更新提交屏幕显示内容  
+	                        holder.unlockCanvasAndPost(c);  
+	                        
+	                        try {  
+	                            Thread.sleep(100);  
+	                              
+	                        } catch (Exception e) {  
+	                        }
+	                          
+	                    }  
+	                };  
+	            }.start();  
+	              
+	        }
+
+			@Override
+			public void surfaceDestroyed(SurfaceHolder arg0) {
+				// TODO Auto-generated method stub
+				
+			}  
+	  
+	    }
 }
 
 
